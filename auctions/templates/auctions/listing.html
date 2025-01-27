@@ -1,0 +1,178 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+{% if messages %}
+    <div class="container mt-5">
+        {% for message in messages %}
+            <div 
+                class="alert alert-{{ message.tags }} alert-dismissible fade show" 
+                role="alert" 
+                id="message-{{ forloop.counter }}">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <script>
+        // Automatically fade out alerts after 3 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                alert.classList.remove('show');
+                alert.classList.add('fade');
+                setTimeout(() => alert.remove(), 500); // Remove alert after fade-out
+            });
+        }, 1000); // 3-second timeout
+    </script>
+{% endif %}
+
+{% if user == listing.winning_bidder and listing.is_active == False %}
+<div class="container mt-5">
+    <div class="alert alert-success" role="alert">
+        Congratulations! You won the auction for <strong>{{ listing.title }}</strong>!
+    </div>
+</div>
+{% endif %}
+
+<div class="container mt-5">
+    <h1 class="mb-4">{{ listing.title }}</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            {% if listing.image_url %}
+                <img src="{{ listing.image_url }}" class="img-fluid rounded shadow" alt="Image for {{ listing.title }}">
+            {% else %}
+                <p>No image available</p>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            
+            {% if user.is_authenticated %}
+
+                {% if user == listing.owner %}
+                    {% if listing.is_active %}
+                        <a href="{% url 'close_listing' listing.id %}" class="btn btn-danger mt-4">Close Listing</a>
+                    {% else %}
+                        <a href="{% url 'open_listing' listing.id %}" class="btn btn-success mt-4">Open Listing</a>
+                    {% endif %}
+
+                {% elif listing.is_active %}
+
+                    <form action = "{% url 'place_bid' listing.id %}" method="post" class="mt-4">
+                        {% csrf_token %}    
+                        <div class="mb-3">
+                            <label for="bid" class="form-label">Place a Bid</label>
+                            <input 
+                                type="number" 
+                                class="form-control" 
+                                id="bid_amount" 
+                                name="bid_amount" 
+                                step="1"
+                                value="{{ listing.current_price }}" 
+                                min="{{ listing.current_price }}" 
+                                required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Place Bid</button>
+                    </form>
+
+                {% endif %}
+        
+                {% if already_watching %}
+                    <a href="{% url 'rem_from_watchlist' listing.id %}" class="btn btn-danger mt-4">Remove from Watchlist</a>
+                {% else %}
+                    <a href="{% url 'add_to_watchlist' listing.id %}" class="btn btn-primary mt-4">Add to Watchlist</a>
+                {% endif %}
+
+            {% endif %}
+
+            <h3 class="mb-3">Description</h3>
+            <p>{{ listing.description }}</p>
+
+            <div class="d-flex justify-content-between mt-4">
+                <div>
+                    <h4>Starting Bid:</h4>
+                    <p class="h5">${{ listing.starting_bid }}</p>
+                </div>
+
+                <div>
+                    <h4>Current Price:</h4>
+                    <p class="h5">${{ listing.current_price }}</p>
+                </div>
+            </div>
+
+            <h4 class="mt-4">Category:</h4>
+            <p>
+                {% for category in categories %}
+                    <span class="badge bg-primary">{{ category }}</span>
+                {% endfor %}
+            </p>
+
+            <h4>Status:
+            <p>
+                {% if listing.is_active %}
+                    <span class="badge bg-success">Active</span>
+                {% else %}
+                    <span class="badge bg-danger">Closed</span>
+                {% endif %}
+            </p>
+            </h4>
+
+            <h4>Created By:</h4>
+            <p>{{ listing.owner.username }}</p>
+
+            <h4>Created At:</h4>
+            <p>{{ listing.created_at|date:"F j, Y, g:i a" }}</p>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+    <h2 class="mt-4">Add Comments</h2>
+    <form method="post" action="{% url 'add_comment' listing.id %}" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="content" class="form-label">Comment</label>
+            <textarea 
+                class="form-control" 
+                id="content" 
+                name="content" 
+                rows="4" 
+                placeholder="Write your comment here..." 
+                required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Comment</button>
+    </form>
+    {% else %}
+        <p class="text-muted mt-4">You must be logged in to add a comment. <a href="{% url 'login' %}">Log in here</a>.</p>
+    {% endif %}
+
+    <h2 class="mt-5">Comments</h2>
+    <div class="mt-4">
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">
+                            <strong>{{ comment.author }}</strong>
+                        </h5>
+                        <p class="card-text">{{ comment.content }}</p>
+                        <p class="card-text">
+                            <small class="text-muted">Posted on {{ comment.created_at|date:"F j, Y, g:i a" }}</small>
+                        </p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">No comments yet. Be the first to comment!</p>
+        {% endif %}
+    </div>
+
+
+
+    <a href="{% url 'index' %}" class="btn btn-secondary mt-4">Back to Listings</a>
+
+
+</div>
+{% endblock %}

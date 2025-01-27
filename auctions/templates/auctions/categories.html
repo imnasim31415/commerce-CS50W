@@ -1,0 +1,22 @@
+{% extends 'auctions/layout.html' %}
+
+{% block body %}
+<h2 class="text-center my-5">Categories</h2>
+<div class="container">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+        {% for category in categories %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-center">{{ category.name }}</h5>
+                        <p class="text-center">
+                            Total Listings: {{ category.listings.count }}
+                        </p>
+                        <a href="{% url 'category' category.name %}" class="btn btn-primary mt-auto">View Category</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
